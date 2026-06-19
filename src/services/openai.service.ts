@@ -59,16 +59,18 @@ export async function openaiStream(body: LlmRequest, res: Response): Promise<voi
     .pipeThrough(new EventSourceParserStream());
 
   for await (const event of stream) {
+    console.log(event)
     if (event.data === '[DONE]') {
       res.write('data: [DONE]\n\n');
       break;
     }
 
-    res.write(`data: ${event.data}\n\n`);
-
     const parsed = JSON.parse(event.data) as Record<string, any>;
+
+    res.write(`event: ${parsed.object}\ndata: ${event.data}\n\n`);
+
     if (parsed?.usage) {
-      inputTokens  = parsed.usage.prompt_tokens     ?? 0;
+      inputTokens  = parsed.usage.prompt_tokens ?? 0;
       outputTokens = parsed.usage.completion_tokens ?? 0;
     }
   }

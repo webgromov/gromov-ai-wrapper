@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import { LlmRequest, LlmResponse } from '../types/llm.types';
 import { parseAnthropicUsage } from './token.service';
 import { calculateCost } from './cost.service';
@@ -6,8 +7,8 @@ import { EventSourceParserStream } from 'eventsource-parser/stream';
 import type { Response } from 'express';
 import logger from '../logger';
 
-const BASE_URL = process.env.GPTUNNEL_BASE_URL!;
-const API_KEY  = process.env.GPTUNNEL_API_KEY!;
+const BASE_URL = process.env.GPTUNNEL_BASE_URL ?? "";
+const API_KEY = process.env.GPTUNNEL_API_KEY ?? "";
 
 export async function anthropicChat(body: LlmRequest): Promise<LlmResponse> {
   const res = await fetch(`${BASE_URL}/messages`, {

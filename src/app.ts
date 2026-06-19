@@ -9,7 +9,7 @@ const app = express();
 app.use(express.json());
 app.use('/api/llm', llmRoutes);
 
-app.get('/health', (_req, res) => {
+app.get('/', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
