@@ -32,7 +32,7 @@ export async function openaiChat(body: LlmRequest): Promise<LlmResponse> {
   return { content, model: body.model, usage, costUSD };
 }
 
-export async function openaiStream(body: LlmRequest, res: Response): Promise<void> {
+export async function openaiStream(body: LlmRequest, res: Response): Promise<{ costUSD: number }> {
   const upstream = await fetch(`${BASE_URL}/chat/completions`, {
     method: 'POST',
     headers: {
@@ -81,4 +81,5 @@ export async function openaiStream(body: LlmRequest, res: Response): Promise<voi
   logger.info({ mode: 'streaming', model: body.model, ...usage, costUSD });
 
   res.end();
+  return { costUSD };
 }

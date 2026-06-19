@@ -4,6 +4,8 @@ import { anthropicChat, anthropicStream } from '../services/anthropic.service';
 import { openaiChat, openaiStream } from '../services/openai.service';
 import logger from '../logger';
 
+import { prisma } from '../libs/prisma'
+
 function detectProvider(model: string): 'anthropic' | 'openai' {
   if (model.startsWith('claude-')) return 'anthropic';
   return 'openai';
@@ -17,14 +19,25 @@ export async function llmHandler(req: Request, res: Response): Promise<void> {
 
   try {
     if (isStream) {
-      if (provider === 'anthropic') await anthropicStream(body, res);
-      else await openaiStream(body, res);
+      const { costUSD } = provider === 'anthropic'
+        ? await anthropicStream(body, res)
+        : await openaiStream(body, res);
+
+      await prisma.user.update({
+        where: { id: req.user.id },
+        data: { balance: { decrement: costUSD } },
+      });
       return;
     }
 
     const result = provider === 'anthropic'
       ? await anthropicChat(body)
       : await openaiChat(body);
+    
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: { balance: { decrement: result.costUSD } },
+    });
 
     logger.info({
       mode: 'json',

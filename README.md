@@ -1,6 +1,6 @@
 # gromov-ai-wrapper
 
-REST API обёртка над LLM-провайдерами (Anthropic Claude, OpenAI GPT) через прокси-сервис [gptunnel.ru](https://gptunnel.ru). Единый endpoint для чата и стриминга, подсчёт токенов и стоимости, логирование запросов, база пользователей на PostgreSQL.
+REST API обёртка над LLM-провайдерами (Anthropic Claude, OpenAI GPT) через прокси-сервис [gptunnel.ru](https://gptunnel.ru). Единый endpoint для чата и стриминга, аутентификация по API-ключу, подсчёт токенов и стоимости, атомарное списание баланса пользователя, логирование запросов.
 
 ## Стек
 
@@ -36,11 +36,14 @@ DATABASE_URL=postgresql://lightix:lightix.sql@localhost:5432/ai_wrapper
 docker compose up -d
 ```
 
-Примени миграции Prisma:
+Примени миграции и залей начальные данные:
 
 ```bash
 npx prisma migrate dev
+npx prisma db seed
 ```
+
+Seed создаёт пользователя `admin@example.com` с балансом $100 и генерирует для него `apiKey`.
 
 ### 4. Запуск
 
@@ -57,9 +60,25 @@ npm start
 
 ## API
 
+### Аутентификация
+
+Все запросы требуют API-ключ в заголовке:
+
+```
+Authorization: Bearer <apiKey>
+```
+
+Ключ выдаётся при создании пользователя (генерируется автоматически через `cuid()`). Посмотреть его можно через Prisma Studio или напрямую в БД.
+
+**Коды ошибок:**
+- `401` — ключ отсутствует или неверный
+- `402` — баланс исчерпан
+
 ### POST /api/llm/chat
 
 Универсальный endpoint для обоих провайдеров. Провайдер определяется автоматически по имени модели: `claude-*` → Anthropic, остальное → OpenAI.
+
+После успешного ответа от ИИ баланс пользователя уменьшается на стоимость запроса (`costUSD`).
 
 **Тело запроса:**
 
@@ -89,7 +108,7 @@ npm start
 }
 ```
 
-**Стриминг** (`"stream": true`) — ответ возвращается в формате SSE (`text/event-stream`).
+**Стриминг** (`"stream": true`) — ответ возвращается в формате SSE (`text/event-stream`). Баланс списывается после завершения потока.
 
 ### Поддерживаемые модели (с подсчётом стоимости)
 
@@ -105,19 +124,24 @@ src/
 ├── server.ts               # точка входа
 ├── app.ts                  # Express app
 ├── controllers/
-│   └── llm.controller.ts   # роутинг по провайдеру
+│   └── llm.controller.ts   # роутинг по провайдеру, списание баланса
 ├── services/
 │   ├── anthropic.service.ts
 │   ├── openai.service.ts
 │   ├── token.service.ts
 │   └── cost.service.ts
 ├── middleware/
+│   ├── auth.ts             # аутентификация по API-ключу
 │   └── validate.ts         # валидация входящего запроса
+├── libs/
+│   └── prisma.ts           # синглтон PrismaClient
 ├── routes/
 │   └── llm.routes.ts
 ├── types/
-│   └── llm.types.ts
+│   ├── llm.types.ts
+│   └── express.d.ts        # расширение Request типом user
 └── logger.ts               # Winston
 prisma/
-└── schema.prisma           # модель User с балансом
+├── schema.prisma           # модели User
+└── seed.ts                 # начальные данные
 ```

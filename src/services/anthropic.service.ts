@@ -35,7 +35,7 @@ export async function anthropicChat(body: LlmRequest): Promise<LlmResponse> {
   return { content, model: body.model, usage, costUSD };
 }
 
-export async function anthropicStream(body: LlmRequest, res: Response): Promise<void> {
+export async function anthropicStream(body: LlmRequest, res: Response): Promise<{ costUSD: number }> {
   const upstream = await fetch(`${BASE_URL}/messages`, {
     method: 'POST',
     headers: {
@@ -82,4 +82,5 @@ export async function anthropicStream(body: LlmRequest, res: Response): Promise<
   logger.info({ mode: 'streaming', model: body.model, ...usage, costUSD });
 
   res.end();
+  return { costUSD };
 }
