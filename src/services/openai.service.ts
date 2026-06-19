@@ -18,6 +18,11 @@ export async function openaiChat(body: LlmRequest): Promise<LlmResponse> {
     body: JSON.stringify({ ...body, stream: false }),
   });
 
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`OpenAI upstream error ${res.status}: ${text}`);
+  }
+
   const data = await res.json() as Record<string, any>;
 
   const usage = parseOpenAiUsage(data['usage']);
