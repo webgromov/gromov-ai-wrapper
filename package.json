@@ -1,0 +1,27 @@
+{
+  "name": "gromov-ai-wrapper",
+  "version": "1.0.0",
+  "description": "REST API wrapper for LLM providers (Anthropic, OpenAI) via gptunnel.ru",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  },
+  "keywords": [],
+  "author": "Alex Gromov",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "eventsource-parser": "^3.1.0",
+    "express": "^5.2.1",
+    "winston": "^3.19.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.0.0",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3"
+  }
+}
